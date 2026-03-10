@@ -1,14 +1,12 @@
 name: Daily Scraper
-
 on:
   schedule:
-    - cron: "0 2 * * *"   # Runs daily at 6:30 AM IST → 1:00 AM UTC
+    - cron: "0 2 * * *"   # Runs daily at 7:30 AM IST → 2:00 AM UTC
   workflow_dispatch:
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
-
     steps:
 
     # ✅ Step 1: Setup SSH
@@ -26,46 +24,48 @@ jobs:
       run: |
         git clone git@github.com:LongwayDataTeam/Amz_Flp_Data_Scraper.git
 
-    # ✅ Step 3: Set up Python (with pip caching)
+    # ✅ Step 3: Set up Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.10"
         cache: "pip"
 
-    # ✅ Step 4: Install ONLY Google Chrome (NO chromedriver)
+    # ✅ Step 4: Install Google Chrome
     - name: Install Google Chrome
       run: |
         sudo apt-get update
         sudo apt-get install -y wget unzip xvfb libnss3 libxss1 libxi6 fonts-liberation libu2f-udev
-
         wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
         sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
-
         echo "✅ Installed Chrome Version:"
         google-chrome --version
 
-    # ✅ Step 5: Remove any preinstalled ChromeDriver (IMPORTANT FIX)
+    # ✅ Step 5: Remove any preinstalled ChromeDriver
     - name: Remove system ChromeDriver
       run: |
         sudo rm -f /usr/local/bin/chromedriver
         sudo rm -f /usr/bin/chromedriver
         echo "✅ Old ChromeDriver removed"
 
-    # ✅ Step 6: Install Python dependencies + webdriver-manager
+    # ✅ Step 6: Install Python dependencies
     - name: Install Python dependencies
       run: |
         cd Amz_Flp_Data_Scraper
         pip install --upgrade pip
         pip install -r requirements.txt
-
-        # ✅ Required for ChromeDriver auto-match
         pip install webdriver-manager
 
-    # ✅ Step 7: Run scraper script
+    # ✅ Step 7: Pre-download matching ChromeDriver (prevents hanging at runtime)
+    - name: Pre-install ChromeDriver
+      run: |
+        python -c "from webdriver_manager.chrome import ChromeDriverManager; path = ChromeDriverManager().install(); print('✅ ChromeDriver ready at:', path)"
+
+    # ✅ Step 8: Run scraper script
     - name: Run scraping script
       env:
         GSHEET_CREDENTIALS: ${{ secrets.GSHEET_CREDENTIALS }}
+        PYTHONUNBUFFERED: "1"
       run: |
         cd Amz_Flp_Data_Scraper
         python amz_flp_data_scraper.py
