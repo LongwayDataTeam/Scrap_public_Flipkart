@@ -1,4 +1,4 @@
-name: Daily Scraper
+name: Flipkart Daily Scraper
 on:
   schedule:
     - cron: "0 2 * * *"   # Runs daily at 7:30 AM IST → 2:00 AM UTC
@@ -31,17 +31,17 @@ jobs:
         python-version: "3.10"
         cache: "pip"
 
-    # ✅ Step 4: Install Google Chrome
+    # ✅ Step 4: Install Google Chrome (reliable method)
     - name: Install Google Chrome
       run: |
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
         sudo apt-get update
-        sudo apt-get install -y wget unzip xvfb libnss3 libxss1 libxi6 fonts-liberation libu2f-udev
-        wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-        sudo dpkg -i google-chrome-stable_current_amd64.deb || sudo apt-get -f install -y
+        sudo apt-get install -y google-chrome-stable
         echo "✅ Installed Chrome Version:"
         google-chrome --version
 
-    # ✅ Step 5: Remove any preinstalled ChromeDriver
+    # ✅ Step 5: Remove any preinstalled ChromeDriver to avoid version conflicts
     - name: Remove system ChromeDriver
       run: |
         sudo rm -f /usr/local/bin/chromedriver
@@ -59,7 +59,11 @@ jobs:
     # ✅ Step 7: Pre-download matching ChromeDriver (prevents hanging at runtime)
     - name: Pre-install ChromeDriver
       run: |
-        python -c "from webdriver_manager.chrome import ChromeDriverManager; path = ChromeDriverManager().install(); print('✅ ChromeDriver ready at:', path)"
+        python -c "
+        from webdriver_manager.chrome import ChromeDriverManager
+        path = ChromeDriverManager().install()
+        print('✅ ChromeDriver ready at:', path)
+        "
 
     # ✅ Step 8: Run scraper script
     - name: Run scraping script
