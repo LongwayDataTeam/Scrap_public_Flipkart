@@ -1,13 +1,14 @@
 name: Flipkart Daily Scraper
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *"   
   workflow_dispatch:
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
     steps:
+
     # ✅ Step 1: Setup SSH
     - name: Setup SSH
       run: |
@@ -30,21 +31,41 @@ jobs:
         python-version: "3.10"
         cache: "pip"
 
-    # ✅ Step 4: Install Python dependencies
+    # ✅ Step 4: Install Google Chrome (reliable method)
+    - name: Install Google Chrome
+      run: |
+        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+        sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        echo "✅ Installed Chrome Version:"
+        google-chrome --version
+
+    # ✅ Step 5: Remove any preinstalled ChromeDriver to avoid version conflicts
+    - name: Remove system ChromeDriver
+      run: |
+        sudo rm -f /usr/local/bin/chromedriver
+        sudo rm -f /usr/bin/chromedriver
+        echo "✅ Old ChromeDriver removed"
+
+    # ✅ Step 6: Install Python dependencies
     - name: Install Python dependencies
       run: |
         cd Amz_Flp_Data_Scraper
         pip install --upgrade pip
         pip install -r requirements.txt
+        pip install webdriver-manager
 
-    # ✅ Step 5: Install Playwright + its own bundled Chromium
-    # This is completely independent of system Chrome — no version conflicts ever
-    - name: Install Playwright browsers
+    # ✅ Step 7: Pre-download matching ChromeDriver (prevents hanging at runtime)
+    - name: Pre-install ChromeDriver
       run: |
-        playwright install chromium --with-deps
-        echo "✅ Playwright Chromium installed"
+        python -c "
+        from webdriver_manager.chrome import ChromeDriverManager
+        path = ChromeDriverManager().install()
+        print('✅ ChromeDriver ready at:', path)
+        "
 
-    # ✅ Step 6: Run scraper script
+    # ✅ Step 8: Run scraper script
     - name: Run scraping script
       env:
         GSHEET_CREDENTIALS: ${{ secrets.GSHEET_CREDENTIALS }}
@@ -52,3 +73,4 @@ jobs:
       run: |
         cd Amz_Flp_Data_Scraper
         python amz_flp_data_scraper.py
+
