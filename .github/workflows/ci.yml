@@ -1,12 +1,14 @@
 name: Flipkart Daily Scraper
+
 on:
   schedule:
-    - cron: "0 0 * * *"   
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
+
     steps:
 
     # ✅ Step 1: Setup SSH
@@ -31,7 +33,7 @@ jobs:
         python-version: "3.10"
         cache: "pip"
 
-    # ✅ Step 4: Install Google Chrome (reliable method)
+    # ✅ Step 4: Install Google Chrome
     - name: Install Google Chrome
       run: |
         wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
@@ -41,7 +43,7 @@ jobs:
         echo "✅ Installed Chrome Version:"
         google-chrome --version
 
-    # ✅ Step 5: Remove any preinstalled ChromeDriver to avoid version conflicts
+    # ✅ Step 5: Remove any preinstalled ChromeDriver
     - name: Remove system ChromeDriver
       run: |
         sudo rm -f /usr/local/bin/chromedriver
@@ -56,7 +58,7 @@ jobs:
         pip install -r requirements.txt
         pip install webdriver-manager
 
-    # ✅ Step 7: Pre-download matching ChromeDriver (prevents hanging at runtime)
+    # ✅ Step 7: Pre-download matching ChromeDriver
     - name: Pre-install ChromeDriver
       run: |
         python -c "
@@ -74,3 +76,11 @@ jobs:
         cd Amz_Flp_Data_Scraper
         python amz_flp_data_scraper.py
 
+    # ✅ Step 9: Upload backup CSV
+    - name: Upload Flipkart Backup
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: flipkart-backup-${{ github.run_number }}
+        path: Amz_Flp_Data_Scraper/flipkart_backup.csv
+        retention-days: 7
