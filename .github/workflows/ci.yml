@@ -2,7 +2,7 @@ name: Flipkart Daily Scraper
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 */4 * * *"
   workflow_dispatch:
 
 jobs:
@@ -11,7 +11,7 @@ jobs:
 
     steps:
 
-    # ✅ Step 1: Setup SSH
+    # Step 1: Setup SSH
     - name: Setup SSH
       run: |
         mkdir -p ~/.ssh
@@ -21,36 +21,36 @@ jobs:
         ssh-add ~/.ssh/id_ed25519
         ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-    # ✅ Step 2: Clone private repo
+    # Step 2: Clone private repo
     - name: Clone private repo
       run: |
         git clone git@github.com:LongwayDataTeam/Amz_Flp_Data_Scraper.git
 
-    # ✅ Step 3: Set up Python
+    # Step 3: Set up Python
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: "3.10"
         cache: "pip"
 
-    # ✅ Step 4: Install Google Chrome
+    # Step 4: Install Google Chrome
     - name: Install Google Chrome
       run: |
         wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
         sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
         sudo apt-get update
         sudo apt-get install -y google-chrome-stable
-        echo "✅ Installed Chrome Version:"
+        echo "Installed Chrome Version:"
         google-chrome --version
 
-    # ✅ Step 5: Remove any preinstalled ChromeDriver
+    # Step 5: Remove any preinstalled ChromeDriver
     - name: Remove system ChromeDriver
       run: |
         sudo rm -f /usr/local/bin/chromedriver
         sudo rm -f /usr/bin/chromedriver
-        echo "✅ Old ChromeDriver removed"
+        echo "Old ChromeDriver removed"
 
-    # ✅ Step 6: Install Python dependencies
+    # Step 6: Install Python dependencies
     - name: Install Python dependencies
       run: |
         cd Amz_Flp_Data_Scraper
@@ -58,16 +58,16 @@ jobs:
         pip install -r requirements.txt
         pip install webdriver-manager
 
-    # ✅ Step 7: Pre-download matching ChromeDriver
+    # Step 7: Pre-download matching ChromeDriver
     - name: Pre-install ChromeDriver
       run: |
         python -c "
         from webdriver_manager.chrome import ChromeDriverManager
         path = ChromeDriverManager().install()
-        print('✅ ChromeDriver ready at:', path)
+        print('ChromeDriver ready at:', path)
         "
 
-    # ✅ Step 8: Run scraper script
+    # Step 8: Run scraper script
     - name: Run scraping script
       env:
         GSHEET_CREDENTIALS: ${{ secrets.GSHEET_CREDENTIALS }}
@@ -76,7 +76,7 @@ jobs:
         cd Amz_Flp_Data_Scraper
         python amz_flp_data_scraper.py
 
-    # ✅ Step 9: Upload backup CSV
+    # Step 9: Upload backup CSV
     - name: Upload Flipkart Backup
       if: always()
       uses: actions/upload-artifact@v4
